@@ -1,36 +1,76 @@
-# Calculadora de Algoritmo Congruencial Multiplicativo
+# Generador de Números Pseudoaleatorios
 
-Una aplicación web React + Next.js que implementa el algoritmo congruencial multiplicativo con las condiciones de Banks Carson, Nelson y Nicol.
+Una aplicación web React + Next.js que implementa dos algoritmos generadores de números pseudoaleatorios:
+- **Congruencial Multiplicativo** con las condiciones de Banks Carson, Nelson y Nicol
+- **Congruencial Lineal (LCG)** con validaciones completas y visualización gráfica
 
 ## 🚀 Características
 
-- ✅ **Interfaz intuitiva**: Formulario fácil de usar para ingresar parámetros g, k, y X₀
-- ✅ **Validación automática**: Verifica que los parámetros cumplan las condiciones requeridas
-- ✅ **Cálculo automático**: Calcula m = 2^g, a y N = 2^(g-2) automáticamente
-- ✅ **Generación de secuencias**: Muestra la secuencia de números pseudoaleatorios generados
+### Generador Congruencial Multiplicativo
+- ✅ **Condiciones de Banks Carson**: Implementación completa con validaciones
+- ✅ **Parámetros automáticos**: Calcula m = 2^g, a = 3+8k o 5+8k, N = 2^(g-2)
+- ✅ **Validación X₀ impar**: Verificación automática de semilla
+
+### Generador Congruencial Lineal (LCG)
+- ✅ **Validación completa**: Rangos X₀, k, g, c, N según especificaciones
+- ✅ **Fórmula LCG**: X_{n+1} = (a × X_n + c) mod m, donde a = 1 + 4k
+- ✅ **Gráficas interactivas**: Visualización con Chart.js (línea y barras)
+- ✅ **Estadísticas**: Min, max, promedio y valores únicos
+- ✅ **Tabla detallada**: Secuencia numerada con cálculos paso a paso
+- ✅ **Hasta 10,000 iteraciones**: Soporte para secuencias largas
+
+### Características Generales
+- ✅ **Interfaz por pestañas**: Alternar entre ambos algoritmos
 - ✅ **Responsive**: Diseño adaptativo con Tailwind CSS
+- ✅ **Feedback inmediato**: Mensajes de error claros
 - ✅ **Listo para Netlify**: Configurado para despliegue automático
 
-## Condiciones del Algoritmo
+## Algoritmos Implementados
 
-Según Banks Carson, Nelson y Nicol, para que el algoritmo congruencial multiplicativo alcance su máximo periodo **N**, debe cumplir:
+### 1. Congruencial Multiplicativo (Banks Carson, Nelson y Nicol)
 
+**Condiciones para máximo periodo:**
 - **m = 2^g** (donde g es un entero positivo)
 - **a = 3 + 8k** o **a = 5 + 8k** (donde k = 0, 1, 2, 3, ...)
 - **X₀ debe ser un número impar**
 - **Período máximo**: N = m/4 = 2^(g-2)
 
-## Fórmula del Algoritmo
+**Fórmula:** X_{n+1} = (a × X_n) mod m
 
+### 2. Congruencial Lineal (LCG)
+
+**Parámetros de entrada:**
+- **X₀**: semilla inicial, entero, 0 ≤ X₀ < m
+- **k**: coeficiente, entero ≥ 0
+- **g**: exponente de módulo, entero ≥ 1
+- **c**: constante aditiva, entero, 0 ≤ c < m
+- **N**: número de iteraciones, entero, 1 ≤ N ≤ 10,000
+
+**Cálculos internos:**
+- **a = 1 + 4k**
+- **m = 2^g**
+
+**Fórmula:** X_{n+1} = (a × X_n + c) mod m
+
+## Fórmulas de los Algoritmos
+
+### Congruencial Multiplicativo
 ```
-Xₙ₊₁ = (a × Xₙ) mod m
+X_{n+1} = (a × X_n) mod m
 ```
 
-Donde:
-- Xₙ es el número actual en la secuencia
-- a es el multiplicador
-- m es el módulo
-- Xₙ₊₁ es el siguiente número en la secuencia
+### Congruencial Lineal (LCG)
+```
+X_{n+1} = (a × X_n + c) mod m
+donde a = 1 + 4k
+```
+
+**Parámetros comunes:**
+- X_n: número actual en la secuencia
+- X_{n+1}: siguiente número en la secuencia
+- a: multiplicador
+- c: constante aditiva (solo LCG)
+- m: módulo
 
 ## Instalación y Uso
 
@@ -110,6 +150,7 @@ npm start
 - **Next.js 14**: Framework de React para aplicaciones web
 - **TypeScript**: Superset tipado de JavaScript
 - **Tailwind CSS**: Framework de CSS para diseño rápido
+- **Chart.js + react-chartjs-2**: Visualización de gráficas interactivas
 - **ESLint**: Herramienta de análisis de código estático
 
 ## Estructura del Proyecto
