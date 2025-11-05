@@ -39,6 +39,11 @@ export default function GeneradorLCG() {
   
   const [showConfirmation, setShowConfirmation] = useState(false)
 
+  // Función helper para validar si un número es potencia de 2
+  const esPotenciaDe2 = (n: number): boolean => {
+    return n > 0 && (n & (n - 1)) === 0
+  }
+
   // CRITERIO 1: Validación completa de entradas
   const validarEntradas = () => {
     const errors: string[] = []
@@ -50,8 +55,10 @@ export default function GeneradorLCG() {
     if (!Number.isInteger(inputs.semilla)) errors.push('La semilla debe ser un número entero')
     if (!Number.isInteger(inputs.cantidad)) errors.push('La cantidad debe ser un número entero')
     
-    // Validar que el módulo sea mayor que 1
-    if (inputs.m <= 1) errors.push('El módulo (m) debe ser mayor que 1')
+    // Validar que el módulo sea una potencia de 2 válida
+    if (!esPotenciaDe2(inputs.m) || inputs.m < 8) {
+      errors.push('El módulo (m) debe ser una potencia de 2 mayor o igual a 8')
+    }
     
     // Validar que la semilla cumpla 0 ≤ semilla < módulo
     if (inputs.semilla < 0 || inputs.semilla >= inputs.m) {
@@ -212,17 +219,20 @@ export default function GeneradorLCG() {
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Módulo (m)
+                    Módulo (m) - Potencias de 2
                   </label>
-                  <input
-                    type="number"
+                  <select
                     value={inputs.m}
-                    onChange={(e) => setInputs(prev => ({ ...prev, m: parseInt(e.target.value) || 2 }))}
+                    onChange={(e) => setInputs(prev => ({ ...prev, m: parseInt(e.target.value) }))}
                     className="w-full px-3 py-2 border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-600 bg-gray-100"
-                    min="2"
-                    step="1"
-                  />
-                  <p className="text-xs text-gray-600 mt-1">Debe ser &gt; 1</p>
+                  >
+                    {[8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384].map((value) => (
+                      <option key={value} value={value}>
+                        {value} (2^{Math.log2(value)})
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-600 mt-1">Seleccione una potencia de 2</p>
                 </div>
                 
                 <div>
