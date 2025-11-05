@@ -25,7 +25,7 @@ export default function GeneradorLCG() {
   const [inputs, setInputs] = useState({
     a: 5,       // multiplicador
     c: 1,       // incremento
-    m: 16,      // módulo
+    m: 16,      // módulo (se calcula automáticamente)
     semilla: 1, // semilla (X₀)
     cantidad: 10 // cantidad de números a generar
   })
@@ -42,6 +42,31 @@ export default function GeneradorLCG() {
   // Función helper para validar si un número es potencia de 2
   const esPotenciaDe2 = (n: number): boolean => {
     return n > 0 && (n & (n - 1)) === 0
+  }
+
+  // Función para calcular el módulo automáticamente basado en la cantidad
+  const calcularModulo = (cantidad: number): number => {
+    if (cantidad <= 0) return 8
+    const g = Math.ceil(Math.log2(cantidad))
+    return Math.pow(2, g)
+  }
+
+  // Función para calcular g basado en la cantidad
+  const calcularG = (cantidad: number): number => {
+    if (cantidad <= 0) return 3
+    return Math.ceil(Math.log2(cantidad))
+  }
+
+  // Actualizar módulo automáticamente cuando cambia la cantidad
+  const handleCantidadChange = (nuevaCantidad: number) => {
+    const nuevoModulo = calcularModulo(nuevaCantidad)
+    setInputs(prev => ({ 
+      ...prev, 
+      cantidad: nuevaCantidad,
+      m: nuevoModulo,
+      // Ajustar semilla si es mayor o igual al nuevo módulo
+      semilla: prev.semilla >= nuevoModulo ? 1 : prev.semilla
+    }))
   }
 
   // CRITERIO 1: Validación completa de entradas
@@ -109,12 +134,15 @@ export default function GeneradorLCG() {
 
   // CRITERIO 4: Reinicio y funcionalidad
   const reiniciar = () => {
+    const cantidadDefault = 10
+    const moduloDefault = calcularModulo(cantidadDefault)
+    
     setInputs({
       a: 5,
       c: 1,
-      m: 16,
+      m: moduloDefault,
       semilla: 1,
-      cantidad: 10
+      cantidad: cantidadDefault
     })
     setResults({
       numeros: [],
@@ -219,7 +247,7 @@ export default function GeneradorLCG() {
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Módulo (m) - Potencias de 2
+                    Módulo (m) = 2^g
                   </label>
                   <select
                     value={inputs.m}
@@ -228,11 +256,13 @@ export default function GeneradorLCG() {
                   >
                     {[8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384].map((value) => (
                       <option key={value} value={value}>
-                        {value} (2^{Math.log2(value)})
+                        {value} (2^{Math.log2(value)}) {value === calcularModulo(inputs.cantidad) ? '← Auto' : ''}
                       </option>
                     ))}
                   </select>
-                  <p className="text-xs text-gray-600 mt-1">Seleccione una potencia de 2</p>
+                  <p className="text-xs text-gray-600 mt-1">
+                    Auto: {calcularModulo(inputs.cantidad)} | g = {calcularG(inputs.cantidad)} | m = 2^{calcularG(inputs.cantidad)}
+                  </p>
                 </div>
                 
                 <div>
@@ -257,12 +287,14 @@ export default function GeneradorLCG() {
                   <input
                     type="number"
                     value={inputs.cantidad}
-                    onChange={(e) => setInputs(prev => ({ ...prev, cantidad: parseInt(e.target.value) || 1 }))}
+                    onChange={(e) => handleCantidadChange(parseInt(e.target.value) || 1)}
                     className="w-full px-3 py-2 border border-gray-400 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-600 bg-gray-100"
                     min="1"
                     step="1"
                   />
-                  <p className="text-xs text-gray-600 mt-1">Números a generar</p>
+                  <p className="text-xs text-gray-600 mt-1">
+                    Números a generar (g = {calcularG(inputs.cantidad)})
+                  </p>
                 </div>
               </div>
 
@@ -331,6 +363,9 @@ export default function GeneradorLCG() {
                     LCG: X<sub>k+1</sub> = ({inputs.a} × X<sub>k</sub> + {inputs.c}) mod {inputs.m}
                   </p>
                   <p className="text-gray-700 text-xs mt-1">
+                    Cantidad: {inputs.cantidad} → g = {calcularG(inputs.cantidad)} → m = 2^{calcularG(inputs.cantidad)} = {calcularModulo(inputs.cantidad)}
+                  </p>
+                  <p className="text-gray-700 text-xs">
                     Normalización: u<sub>k</sub> = X<sub>k</sub> / {inputs.m}
                   </p>
                 </div>
@@ -442,6 +477,12 @@ export default function GeneradorLCG() {
                 <div className="space-y-2 text-sm text-gray-700">
                   <div className="p-2 bg-gray-300 rounded">
                     <strong>Fórmula:</strong> X<sub>k+1</sub> = ({inputs.a} × X<sub>k</sub> + {inputs.c}) mod {inputs.m}
+                  </div>
+                  <div className="p-2 bg-gray-300 rounded">
+                    <strong>Cálculo automático:</strong> g = ceil(log₂({inputs.cantidad})) = {calcularG(inputs.cantidad)}
+                  </div>
+                  <div className="p-2 bg-gray-300 rounded">
+                    <strong>Módulo calculado:</strong> m = 2^{calcularG(inputs.cantidad)} = {calcularModulo(inputs.cantidad)}
                   </div>
                   <div className="p-2 bg-gray-300 rounded">
                     <strong>Normalización:</strong> u<sub>k</sub> = X<sub>k</sub> / {inputs.m}
