@@ -6,36 +6,43 @@ Una aplicación web React + Next.js que implementa dos algoritmos generadores de
 
 ## 🚀 Características
 
-### Generador Congruencial Multiplicativo
-- ✅ **Condiciones de Banks Carson**: Implementación completa con validaciones
-- ✅ **Parámetros automáticos**: Calcula m = 2^g, a = 3+8k o 5+8k, N = 2^(g-2)
-- ✅ **Validación X₀ impar**: Verificación automática de semilla
+### ✨ **Interfaz Simplificada**
+- **Una sola página** con todo integrado
+- **Alternador de algoritmos** simple y directo
+- **Formularios limpios** sin elementos innecesarios
 
-### Generador Congruencial Lineal (LCG)
-- ✅ **Validación completa**: Rangos X₀, k, g, c, N según especificaciones
-- ✅ **Fórmula LCG**: X_{n+1} = (a × X_n + c) mod m, donde a = 1 + 4k
-- ✅ **Gráficas interactivas**: Visualización con Chart.js (línea y barras)
-- ✅ **Estadísticas**: Min, max, promedio y valores únicos
-- ✅ **Tabla detallada**: Secuencia numerada con cálculos paso a paso
-- ✅ **Hasta 10,000 iteraciones**: Soporte para secuencias largas
+### 🧮 **Algoritmos Implementados**
+- **Congruencial Multiplicativo**: Parámetros g, k, X₀ ingresados por teclado
+- **Congruencial Lineal (LCG)**: Con validaciones completas
+- **Cálculos automáticos** en tiempo real
+- **Validación inmediata** de parámetros
 
-### Características Generales
-- ✅ **Interfaz por pestañas**: Alternar entre ambos algoritmos
-- ✅ **Responsive**: Diseño adaptativo con Tailwind CSS
-- ✅ **Feedback inmediato**: Mensajes de error claros
-- ✅ **Listo para Netlify**: Configurado para despliegue automático
+### 📊 **Visualización Esencial**
+- **Gráfica de línea** para ver la evolución
+- **Tabla de números** generados (hasta 32 visibles)
+- **Estadísticas básicas**: min, max, promedio, únicos
+- **Feedback visual** de errores
 
 ## Algoritmos Implementados
 
-### 1. Congruencial Multiplicativo (Banks Carson, Nelson y Nicol)
+### 1. Congruencial Multiplicativo
 
-**Condiciones para máximo periodo:**
-- **m = 2^g** (donde g es un entero positivo)
-- **a = 3 + 8k** o **a = 5 + 8k** (donde k = 0, 1, 2, 3, ...)
-- **X₀ debe ser un número impar**
-- **Período máximo**: N = m/4 = 2^(g-2)
+**Parámetros de entrada:**
+- **g**: entero positivo (se ingresa por teclado)
+- **k**: entero ≥ 0 (se ingresa por teclado)  
+- **X₀**: valor inicial > 0 (se ingresa por teclado)
+
+**Cálculos automáticos:**
+- **m = 2^g**
+- **a = 3 + 8k** o **a = 5 + 8k** (seleccionable)
 
 **Fórmula:** X_{n+1} = (a × X_n) mod m
+
+<!-- Comentado temporalmente - Condiciones de Banks Carson, Nelson y Nicol
+**Condiciones para máximo periodo:**
+- X₀ debe ser un número impar
+- Período máximo: N = m/4 = 2^(g-2)
+-->
 
 ### 2. Congruencial Lineal (LCG)
 
@@ -153,23 +160,24 @@ npm start
 - **Chart.js + react-chartjs-2**: Visualización de gráficas interactivas
 - **ESLint**: Herramienta de análisis de código estático
 
-## Estructura del Proyecto
+## Estructura Simplificada
 
 ```
 calculadora-random/
-├── src/
-│   └── app/
-│       ├── globals.css          # Estilos globales
-│       ├── layout.tsx           # Layout principal
-│       └── page.tsx             # Componente principal
-├── .github/
-│   └── copilot-instructions.md  # Instrucciones del proyecto
-├── package.json                 # Dependencias y scripts
-├── tsconfig.json               # Configuración de TypeScript
-├── tailwind.config.js          # Configuración de Tailwind CSS
-├── next.config.js              # Configuración de Next.js
-└── README.md                   # Este archivo
+├── src/app/
+│   ├── globals.css    # Estilos de Tailwind
+│   ├── layout.tsx     # Layout base
+│   └── page.tsx       # ✨ TODA LA APLICACIÓN EN UN ARCHIVO
+├── package.json       # Dependencias mínimas
+├── next.config.js     # Configuración para Netlify
+└── README.md          # Documentación
 ```
+
+**Solo 1 archivo principal**: `page.tsx` contiene toda la lógica
+- Ambos algoritmos
+- Validaciones
+- Gráficas
+- Interfaz de usuario
 
 ## Contribución
 
