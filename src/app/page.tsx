@@ -36,6 +36,50 @@ export default function GeneradorLCG() {
     errors: [] as string[],
     generado: false
   })
+  // Estado para validación
+  const [validacion, setValidacion] = useState({
+    independencia: null as null | boolean,
+    uniformidad: null as null | boolean,
+    valido: null as null | boolean
+  })
+  // Prueba de independencia: correlación de Pearson entre u_k y u_{k+1}
+  function pruebaIndependencia(normalizados: number[]): boolean {
+    if (normalizados.length < 2) return true;
+    const n = normalizados.length - 1;
+    const x = normalizados.slice(0, n);
+    const y = normalizados.slice(1);
+    const meanX = x.reduce((a, b) => a + b, 0) / n;
+    const meanY = y.reduce((a, b) => a + b, 0) / n;
+    let num = 0, denX = 0, denY = 0;
+    for (let i = 0; i < n; i++) {
+      num += (x[i] - meanX) * (y[i] - meanY);
+      denX += (x[i] - meanX) ** 2;
+      denY += (y[i] - meanY) ** 2;
+    }
+    const corr = num / Math.sqrt(denX * denY);
+    // Considerar independiente si |corr| < 0.1
+    return Math.abs(corr) < 0.1;
+  }
+
+  // Prueba de uniformidad: chi-cuadrado en 10 intervalos
+  function pruebaUniformidad(normalizados: number[]): boolean {
+    const n = normalizados.length;
+    if (n === 0) return true;
+    const k = 10;
+    const frec = Array(k).fill(0);
+    for (let u of normalizados) {
+      let idx = Math.floor(u * k);
+      if (idx === k) idx = k - 1;
+      frec[idx]++;
+    }
+    const esperado = n / k;
+    let chi2 = 0;
+    for (let i = 0; i < k; i++) {
+      chi2 += ((frec[i] - esperado) ** 2) / esperado;
+    }
+    // Valor crítico chi2 para k-1=9 y alfa=0.05 ≈ 16.92
+    return chi2 < 16.92;
+  }
   
   const [showConfirmation, setShowConfirmation] = useState(false)
 
@@ -123,12 +167,17 @@ export default function GeneradorLCG() {
       normalizados.push(x / inputs.m)
     }
 
+    // Validaciones
+    const independencia = pruebaIndependencia(normalizados);
+    const uniformidad = pruebaUniformidad(normalizados);
+    const valido = independencia && uniformidad;
     setResults({
       numeros,
       normalizados,
       errors: [],
       generado: true
     })
+    setValidacion({ independencia, uniformidad, valido });
     setShowConfirmation(false)
   }
 
@@ -150,6 +199,7 @@ export default function GeneradorLCG() {
       errors: [],
       generado: false
     })
+    setValidacion({ independencia: null, uniformidad: null, valido: null });
     setShowConfirmation(false)
   }
 
@@ -356,7 +406,33 @@ export default function GeneradorLCG() {
           <div className="lg:col-span-2">
             {results.generado && results.numeros.length > 0 ? (
               <div className="space-y-4">
-                
+                {/* Indicador de validación */}
+                <div className={`rounded-md p-3 mb-2 ${validacion.valido === null ? '' : validacion.valido ? 'bg-green-100 border border-green-400' : 'bg-red-100 border border-red-400'}`}>
+                  <h3 className="font-medium text-sm mb-1 text-gray-800">Validación de los números generados</h3>
+                  <ul className="text-xs text-gray-700">
+                    <li>
+                      <strong>Independencia:</strong> {validacion.independencia === null ? '-' : validacion.independencia ? '✔️' : '❌'}
+                      {validacion.independencia === false && <span className="ml-2 text-red-600">(Correlación detectada)</span>}
+                    </li>
+                    <li>
+                      <strong>Uniformidad:</strong> {validacion.uniformidad === null ? '-' : validacion.uniformidad ? '✔️' : '❌'}
+                      {validacion.uniformidad === false && <span className="ml-2 text-red-600">(No uniforme)</span>}
+                    </li>
+                  </ul>
+                  <div className="mt-2 font-bold text-lg">
+                    {validacion.valido === null ? '' : validacion.valido ? <span className="text-green-700">Válidos</span> : <span className="text-red-700">No válidos</span>}
+                  </div>
+                  {/* Botón de regenerar si no son válidos */}
+                  {validacion.valido === false && (
+                    <button
+                      onClick={generar}
+                      className="mt-3 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                    >
+                      Regenerar Números
+                    </button>
+                  )}
+                </div>
+                {/* ...existing code... */}
                 {/* Fórmula utilizada */}
                 <div className="bg-gray-400 border border-gray-500 rounded-md p-3">
                   <p className="text-gray-800 font-medium text-sm">
@@ -369,7 +445,7 @@ export default function GeneradorLCG() {
                     Normalización: u<sub>k</sub> = X<sub>k</sub> / {inputs.m}
                   </p>
                 </div>
-
+                {/* ...existing code... */}
                 {/* Diagrama de Dispersión */}
                 <div className="bg-gray-200 rounded-lg p-4">
                   <h3 className="text-lg font-medium mb-3 text-gray-800">Diagrama de Dispersión</h3>
@@ -377,7 +453,7 @@ export default function GeneradorLCG() {
                     <Scatter data={scatterData} options={scatterOptions} />
                   </div>
                 </div>
-
+                {/* ...existing code... */}
                 {/* Estadísticas */}
                 <div className="bg-gray-200 rounded-lg p-4">
                   <h3 className="text-lg font-medium mb-3 text-gray-800">Estadísticas</h3>
@@ -402,7 +478,7 @@ export default function GeneradorLCG() {
                     </div>
                   </div>
                 </div>
-
+                {/* ...existing code... */}
               </div>
             ) : (
               <div className="bg-gray-200 rounded-lg p-8 text-center">
