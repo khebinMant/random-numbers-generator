@@ -42,6 +42,14 @@ export default function GeneradorLCG() {
     uniformidad: null as null | boolean,
     valido: null as null | boolean
   })
+
+  // Estado para pruebas estadísticas
+  const [pruebasEstadisticas, setPruebasEstadisticas] = useState({
+    media: null as null | { valor: number, pasa: boolean },
+    varianza: null as null | { valor: number, pasa: boolean },
+    uniformidadKS: null as null | { estadistico: number, pasa: boolean },
+    independenciaRachas: null as null | { rachas: number, esperado: number, pasa: boolean }
+  })
   // Prueba de independencia: correlación de Pearson entre u_k y u_{k+1}
   function pruebaIndependencia(normalizados: number[]): boolean {
     if (normalizados.length < 2) return true;
@@ -79,6 +87,74 @@ export default function GeneradorLCG() {
     }
     // Valor crítico chi2 para k-1=9 y alfa=0.05 ≈ 16.92
     return chi2 < 16.92;
+  }
+
+  // Prueba de Media: debe estar cerca de 0.5
+  function pruebaMedia(normalizados: number[]): { valor: number, pasa: boolean } {
+    if (normalizados.length === 0) return { valor: 0, pasa: true };
+    const media = normalizados.reduce((a, b) => a + b, 0) / normalizados.length;
+    // Intervalo de confianza al 95%: 0.5 ± 1.96 * sqrt(1/12n)
+    const n = normalizados.length;
+    const error = 1.96 * Math.sqrt(1 / (12 * n));
+    const limInf = 0.5 - error;
+    const limSup = 0.5 + error;
+    const pasa = media >= limInf && media <= limSup;
+    return { valor: media, pasa };
+  }
+
+  // Prueba de Varianza: debe estar cerca de 1/12
+  function pruebaVarianza(normalizados: number[]): { valor: number, pasa: boolean } {
+    if (normalizados.length === 0) return { valor: 0, pasa: true };
+    const n = normalizados.length;
+    const media = normalizados.reduce((a, b) => a + b, 0) / n;
+    const varianza = normalizados.reduce((sum, val) => sum + Math.pow(val - media, 2), 0) / n;
+    // Intervalo de confianza usando chi-cuadrado
+    // Varianza esperada = 1/12 ≈ 0.0833
+    const varEsperada = 1 / 12;
+    // Límites aproximados al 95%
+    const limInf = varEsperada * 0.7;
+    const limSup = varEsperada * 1.3;
+    const pasa = varianza >= limInf && varianza <= limSup;
+    return { valor: varianza, pasa };
+  }
+
+  // Prueba de Uniformidad Kolmogorov-Smirnov
+  function pruebaUniformidadKS(normalizados: number[]): { estadistico: number, pasa: boolean } {
+    if (normalizados.length === 0) return { estadistico: 0, pasa: true };
+    const n = normalizados.length;
+    const ordenados = [...normalizados].sort((a, b) => a - b);
+    let dMax = 0;
+    for (let i = 0; i < n; i++) {
+      const fn = (i + 1) / n; // Función empírica
+      const fx = ordenados[i]; // Función teórica uniforme [0,1]
+      const d = Math.abs(fn - fx);
+      if (d > dMax) dMax = d;
+    }
+    // Valor crítico para α=0.05: 1.36 / sqrt(n)
+    const critico = 1.36 / Math.sqrt(n);
+    const pasa = dMax < critico;
+    return { estadistico: dMax, pasa };
+  }
+
+  // Prueba de Independencia (Rachas arriba y abajo)
+  function pruebaIndependenciaRachas(normalizados: number[]): { rachas: number, esperado: number, pasa: boolean } {
+    if (normalizados.length < 2) return { rachas: 0, esperado: 0, pasa: true };
+    const n = normalizados.length;
+    let rachas = 1;
+    for (let i = 1; i < n; i++) {
+      if ((normalizados[i] > normalizados[i-1]) !== (normalizados[i-1] > normalizados[i-2] || i === 1)) {
+        rachas++;
+      }
+    }
+    // Rachas esperadas = (2n-1)/3
+    const esperado = (2 * n - 1) / 3;
+    // Desviación estándar = sqrt((16n-29)/90)
+    const desviacion = Math.sqrt((16 * n - 29) / 90);
+    // Intervalo de confianza al 95%
+    const limInf = esperado - 1.96 * desviacion;
+    const limSup = esperado + 1.96 * desviacion;
+    const pasa = rachas >= limInf && rachas <= limSup;
+    return { rachas, esperado, pasa };
   }
   
   const [showConfirmation, setShowConfirmation] = useState(false)
@@ -171,6 +247,13 @@ export default function GeneradorLCG() {
     const independencia = pruebaIndependencia(normalizados);
     const uniformidad = pruebaUniformidad(normalizados);
     const valido = independencia && uniformidad;
+    
+    // Pruebas estadísticas adicionales
+    const media = pruebaMedia(normalizados);
+    const varianza = pruebaVarianza(normalizados);
+    const uniformidadKS = pruebaUniformidadKS(normalizados);
+    const independenciaRachas = pruebaIndependenciaRachas(normalizados);
+    
     setResults({
       numeros,
       normalizados,
@@ -178,6 +261,7 @@ export default function GeneradorLCG() {
       generado: true
     })
     setValidacion({ independencia, uniformidad, valido });
+    setPruebasEstadisticas({ media, varianza, uniformidadKS, independenciaRachas });
     setShowConfirmation(false)
   }
 
@@ -200,6 +284,12 @@ export default function GeneradorLCG() {
       generado: false
     })
     setValidacion({ independencia: null, uniformidad: null, valido: null });
+    setPruebasEstadisticas({
+      media: null,
+      varianza: null,
+      uniformidadKS: null,
+      independenciaRachas: null
+    });
     setShowConfirmation(false)
   }
 
@@ -454,9 +544,92 @@ export default function GeneradorLCG() {
                   </div>
                 </div>
                 {/* ...existing code... */}
+                
+                {/* Pruebas Estadísticas Detalladas */}
+                <div className="bg-gray-200 rounded-lg p-4">
+                  <h3 className="text-lg font-medium mb-3 text-gray-800">Pruebas Estadísticas</h3>
+                  <div className="space-y-3">
+                    {/* Prueba de Media */}
+                    <div className={`p-3 rounded-md ${pruebasEstadisticas.media?.pasa ? 'bg-green-50 border border-green-300' : 'bg-red-50 border border-red-300'}`}>
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <h4 className="font-semibold text-sm text-gray-800">Prueba de Media</h4>
+                          <p className="text-xs text-gray-600">Valor esperado: 0.5</p>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-mono text-sm font-bold">
+                            {pruebasEstadisticas.media ? pruebasEstadisticas.media.valor.toFixed(6) : '-'}
+                          </div>
+                          <div className="text-lg">
+                            {pruebasEstadisticas.media?.pasa ? '✔️' : pruebasEstadisticas.media ? '❌' : '-'}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Prueba de Varianza */}
+                    <div className={`p-3 rounded-md ${pruebasEstadisticas.varianza?.pasa ? 'bg-green-50 border border-green-300' : 'bg-red-50 border border-red-300'}`}>
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <h4 className="font-semibold text-sm text-gray-800">Prueba de Varianza</h4>
+                          <p className="text-xs text-gray-600">Valor esperado: 0.0833 (1/12)</p>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-mono text-sm font-bold">
+                            {pruebasEstadisticas.varianza ? pruebasEstadisticas.varianza.valor.toFixed(6) : '-'}
+                          </div>
+                          <div className="text-lg">
+                            {pruebasEstadisticas.varianza?.pasa ? '✔️' : pruebasEstadisticas.varianza ? '❌' : '-'}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Prueba de Uniformidad KS */}
+                    <div className={`p-3 rounded-md ${pruebasEstadisticas.uniformidadKS?.pasa ? 'bg-green-50 border border-green-300' : 'bg-red-50 border border-red-300'}`}>
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <h4 className="font-semibold text-sm text-gray-800">Prueba de Uniformidad (Kolmogorov-Smirnov)</h4>
+                          <p className="text-xs text-gray-600">
+                            Estadístico D vs Crítico: {pruebasEstadisticas.uniformidadKS ? (1.36 / Math.sqrt(results.numeros.length)).toFixed(4) : '-'}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-mono text-sm font-bold">
+                            D = {pruebasEstadisticas.uniformidadKS ? pruebasEstadisticas.uniformidadKS.estadistico.toFixed(6) : '-'}
+                          </div>
+                          <div className="text-lg">
+                            {pruebasEstadisticas.uniformidadKS?.pasa ? '✔️' : pruebasEstadisticas.uniformidadKS ? '❌' : '-'}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Prueba de Independencia (Rachas) */}
+                    <div className={`p-3 rounded-md ${pruebasEstadisticas.independenciaRachas?.pasa ? 'bg-green-50 border border-green-300' : 'bg-red-50 border border-red-300'}`}>
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <h4 className="font-semibold text-sm text-gray-800">Prueba de Independencia (Rachas Arriba/Abajo)</h4>
+                          <p className="text-xs text-gray-600">
+                            Rachas esperadas: {pruebasEstadisticas.independenciaRachas ? pruebasEstadisticas.independenciaRachas.esperado.toFixed(2) : '-'}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-mono text-sm font-bold">
+                            {pruebasEstadisticas.independenciaRachas ? pruebasEstadisticas.independenciaRachas.rachas : '-'} rachas
+                          </div>
+                          <div className="text-lg">
+                            {pruebasEstadisticas.independenciaRachas?.pasa ? '✔️' : pruebasEstadisticas.independenciaRachas ? '❌' : '-'}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
                 {/* Estadísticas */}
                 <div className="bg-gray-200 rounded-lg p-4">
-                  <h3 className="text-lg font-medium mb-3 text-gray-800">Estadísticas</h3>
+                  <h3 className="text-lg font-medium mb-3 text-gray-800">Estadísticas Básicas</h3>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <div className="text-center p-3 bg-gray-300 rounded-md">
                       <div className="text-xl font-bold text-gray-800">{Math.min(...results.numeros)}</div>
